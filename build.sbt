@@ -24,15 +24,16 @@ ThisBuild / developers := List(
 
 // Spark NLP 5.1.0 was compiled with Scala 2.12.15 and Spark 3.3.1
 // Do not change these versions unless you know what you are doing
-val sparkVer = "3.4.0"
+val sparkVer = "3.4.2"
 val sparkNLP = "5.1.0"
 
 libraryDependencies ++= {
   Seq(
     "org.apache.spark" %% "spark-core" % sparkVer % Provided,
     "org.apache.spark" %% "spark-mllib" % sparkVer % Provided,
+   // "org.apache.spark" %% "spark-sql" % sparkVer % Provided, // for submiting spark app as a job to cluster
     "org.scalatest" %% "scalatest" % scalaTestVersion % "test",
-    "com.johnsnowlabs.nlp" %% "spark-nlp-silicon" % sparkNLP)
+    "com.johnsnowlabs.nlp" %% "spark-nlp" % sparkNLP)
 }
 
 /** Disables tests in assembly */

@@ -3,110 +3,82 @@ import com.johnsnowlabs.nlp.base._
 import com.johnsnowlabs.nlp.pretrained.PretrainedPipeline
 import org.apache.spark.ml.Pipeline
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{Dataset, DataFrame, SaveMode}
+import org.apache.spark.sql.functions._
+
+// install spark locally and add to path: export PATH=$PATH:/usr/local/spark/bin
+// spark-submit --class "Main" target/scala-2.12/spark-nlp-starter-assembly-5.2.0.jar
+
+// train/test CSV headers: id,keyword,location,text,target
+final case class News(
+  category: String,
+  description: String,
+)
 
 object Main {
-  val spark: SparkSession = SparkSession.builder
-    .appName("spark-nlp-starter")
-    .master("local[*]")
-    .getOrCreate
 
   def main(args: Array[String]): Unit = {
-
+    implicit val spark = SparkSession.builder()
+      .appName("spark-nlp-starter")
+      .master("local[*]")
+      .getOrCreate()
+    
+    import spark.implicits._
     spark.sparkContext.setLogLevel("ERROR")
+    // Assuming you have a dataset of Tweets
 
-    val document = new DocumentAssembler()
-      .setInputCol("text")
+    val outputPath = "/home/daniel/repos/spark-nlp-starter/src/main/resources/output"
+
+    val train_ds: Dataset[News] = loadData("/home/daniel/repos/spark-nlp-starter/src/main/resources/data/news_category_train.csv")
+    train_ds.show(10, truncate=50)
+    
+    println("Dataset loaded")
+    // Define the stages of the Pipeline
+    val documentAssembler = new DocumentAssembler()
+      .setInputCol("description")
       .setOutputCol("document")
-
-    val sentenceDetector = new SentenceDetector()
-      .setInputCols("document")
-      .setOutputCol("sentence")
-
-    val token = new Tokenizer()
-      .setInputCols("sentence")
-      .setOutputCol("token")
-
-    val posTagger = PerceptronModel
+    
+    val bertSentenceEmbeddings = UniversalSentenceEncoder
       .pretrained()
-      .setInputCols("sentence", "token")
-      .setOutputCol("pos")
+      .setInputCols(Array("document"))
+      .setOutputCol("sentence_embeddings")
+  
+    // Initialize ClassifierDLApproach
+    val classifierDL = new ClassifierDLApproach()
+      .setInputCols("sentence_embeddings")
+      .setOutputCol("class")
+      .setLabelColumn("category")
+      .setMaxEpochs(5) // Set the number of epochs
+      .setEnableOutputLogs(true)
 
-    val wordEmbeddings = WordEmbeddingsModel
-      .pretrained()
-      .setInputCols("sentence", "token")
-      .setOutputCol("word_embeddings")
-
-    val ner = NerDLModel
-      .pretrained("ner_dl", "en")
-      .setInputCols("token", "sentence", "word_embeddings")
-      .setOutputCol("ner")
-
-    val nerConverter = new NerConverter()
-      .setInputCols("sentence", "token", "ner")
-      .setOutputCol("ner_converter")
-
-    val finisher = new Finisher()
-      .setInputCols("ner", "ner_converter")
-      .setCleanAnnotations(false)
-
-    val pipeline = new Pipeline().setStages(
-      Array(
-        document,
-        sentenceDetector,
-        token,
-        posTagger,
-        wordEmbeddings,
-        ner,
-        nerConverter,
-        finisher))
-
-    val testData = spark
-      .createDataFrame(
-        Seq(
-          (1, "Google has announced the release of a beta version of the popular TensorFlow machine learning library"),
-          (2, "The Paris metro will soon enter the 21st century, ditching single-use paper tickets for rechargeable electronic cards.")))
-      .toDF("id", "text")
-
-    val predicion = pipeline.fit(testData).transform(testData)
-    predicion.select("ner_converter.result").show(false)
-    predicion.select("pos.result").show(false)
-
+    // Pipeline with ClassifierDL
+    val pipeline = new Pipeline().setStages(Array(documentAssembler, bertSentenceEmbeddings, classifierDL))
+    println("Created Classifier pipeline")
+    // Fit the model
+    val classifierModel = pipeline.fit(train_ds)
+    println("Fit Model")
+    //predictions:
+    val test_ds = loadData("/home/daniel/repos/spark-nlp-starter/src/main/resources/data/news_category_test.csv")
+    println("Test Data Cleaned")
+    
+    println("Test Data Embedded")
+    val predictions = classifierModel.transform(test_ds)
+    predictions.show()
   }
 
-  def pretrainedPipeline(args: Array[String]): Unit = {
-
-    spark.sparkContext.setLogLevel("ERROR")
-
-    val testData = spark
-      .createDataFrame(
-        Seq(
-          (1, "Google has announced the release of a beta version of the popular TensorFlow machine learning library"),
-          (2, "The Paris metro will soon enter the 21st century, ditching single-use paper tickets for rechargeable electronic cards.")))
-      .toDF("id", "text")
-
-    val pipeline = new PretrainedPipeline("explain_document_dl", lang = "en")
-    pipeline.annotate(
-      "Google has announced the release of a beta version of the popular TensorFlow machine learning library")
-    pipeline.transform(testData).select("entities").show(false)
-
-    val pipelineML = new PretrainedPipeline("explain_document_ml", lang = "en")
-    pipelineML.annotate(
-      "Google has announced the release of a beta version of the popular TensorFlow machine learning library")
-    pipelineML.transform(testData).select("pos").show(false)
-
+  def loadData(inputFile: String)(implicit spark: SparkSession):Dataset[News] = {
+    import spark.implicits._
+    spark
+      .read
+      .format("csv")
+      .option("header", "true")
+      .option("inferSchema", "true")
+      .option("delimiter", ",") // Specify delimiter, default is ","
+      .option("quote", "\"") // Default quote character
+      .option("escape", "\"") // Escape character to handle quotes within quoted strings
+      .option("multiline", "true") // Handle multi-line records
+      .load(inputFile)
+      .as[News]
   }
 
-  def pretrainedPipelineLD(args: Array[String]): Unit = {
-
-    spark.sparkContext.setLogLevel("ERROR")
-
-    val testData =
-      Array(
-        "A természetes nyelvfeldolgozás története általában az 1950-es években kezdődött, bár a korábbi időszakokból származó munkák is megtalálhatók. 1950-ben Alan Turing közzétett egy cikket, melynek címe: „Számítástechnika és intelligenciagépek”, és amely intelligenciakritériumként javasolta a Turing-tesztet.",
-        "Geoffrey Everest Hinton é um psicólogo cognitivo britânico canadense e cientista da computação, mais conhecido por seu trabalho em redes neurais artificiais. Desde 2013, ele trabalha para o Google e a Universidade de Toronto. Em 2017, foi co-fundador e tornou-se Conselheiro Científico Chefe do Vector Institute of Toronto.")
-
-    val pipeline = new PretrainedPipeline("detect_language_43", lang = "xx")
-    println(pipeline.annotate(testData).mkString("Array(", ", ", ")"))
-
-  }
 }
