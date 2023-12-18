@@ -17,10 +17,9 @@ licenses := Seq("Apache-2.0" -> url("https://opensource.org/licenses/Apache-2.0"
 
 ThisBuild / developers := List(
   Developer(
-    id = "maziyarpanahi",
-    name = "Maziyar Panahi",
-    email = "maziyar.panahi@iscpif.fr",
-    url = url("https://github.com/maziyarpanahi")))
+    id = "dlebedinsky",
+    name = "Daniel Lebedinsky",
+    url = url("https://github.com/dlebedinsky")))
 
 // Spark NLP 5.1.0 was compiled with Scala 2.12.15 and Spark 3.3.1
 // Do not change these versions unless you know what you are doing

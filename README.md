@@ -1,20 +1,23 @@
-# spark-nlp-starter
+# Scala Course final project: Tweet Classification with Spark NLP
  
-![Scala CI](https://github.com/maziyarpanahi/spark-nlp-starter/workflows/Scala%20CI/badge.svg)
+### Motivation and Data Source
+I created this project with the goal of submitting a classification of disaster-related vs non-disaster-related tweets to this [Kaggle competition.](https://www.kaggle.com/competitions/nlp-getting-started/data)
+So far, it has achieved an accuracy value of 0.7977, according to their hidden test set keys.
 
-This is just a simple demo as how to use Spark NLP in a SBT project in Scala. Usually, once you have your application you want to package it and run it via `spark-submit`.
-
-## spark-submit
-After your executed `sbt assembly` to get a Fat JAR (without Apache Spark since your environment has Apache Spark already), you can use `spark-submit` like this:
-
+### Installation
+I followed [these instructions](https://www.tutorialspoint.com/apache_spark/apache_spark_installation.htm) to install the dependencies for this project. When you reach the Download Apache Spark step, you must select version 3.4.2, "pre-built for Apache Hadoop 3.3 and later." Optionally, you can run the following to make it easier to run the `spark-submit` command:
 ```shell
-sbt assembly
+export PATH=$PATH:/usr/local/spark/bin
 ```
 
+### Use
+After you executed `sbt compile assembly` to get a JAR (without Apache Spark), you can use `spark-submit` like this:
+
 ```shell
-~/spark-3.1.1-bin-hadoop3.2/bin/spark-submit \
---class "Main" \
-target/scala-2.12/spark-nlp-starter-assembly-1.1.jar
+spark-submit --driver-memory 4g --class Main target/scala-2.12/spark-nlp-starter-assembly-5.1.0.jar
 ```
 
-This will execute the code in `Main` class and finish successfully.
+This will execute the code in `Main` class, show training and validation loss/accuracy by epoch in the console, and classify the test data in src/main/resources/output. Sample console output is included in src/main/resources/. 
+
+### Future improvements
+I hope to run the training pipeline in a cloud environment with a powerful GPU, so that I can feasibly train the NLP model for more epochs and with a smaller learning rate, to achieve a better test accuracy. I also hope to visualize the training/validation loss and accuracy improvements natively in Scala, possibly using Vegas or a similar library. 
