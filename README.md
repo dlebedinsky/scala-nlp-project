@@ -17,7 +17,10 @@ After you executed `sbt compile assembly` to get a JAR (without Apache Spark), y
 spark-submit --driver-memory 4g --class Main target/scala-2.12/spark-nlp-starter-assembly-5.1.0.jar
 ```
 
-This will execute the code in `Main` class, show training and validation loss/accuracy by epoch in the console, and classify the test data in src/main/resources/output. Sample console output is included in src/main/resources/. 
+This will execute the code in `Main` class, show training and validation loss/accuracy by epoch in the console, and classify the test data in src/main/resources/output. I have optimized the command for systems with relatively low memory (~8GB). Sample console output is included in src/main/resources/. 
 
 ### Future improvements
-I hope to run the training pipeline in a cloud environment with a powerful GPU, so that I can feasibly train the NLP model for more epochs and with a smaller learning rate, to achieve a better test accuracy. I also hope to visualize the training/validation loss and accuracy improvements natively in Scala, possibly using Vegas or a similar library. 
+I hope to eventually try the following with this project:
+* Run the training pipeline in a cloud environment with a powerful GPU, so that I can feasibly train the ClassiferDL model for more epochs and with a smaller learning rate, to achieve a better test accuracy; or run on a distributed Spark cluster, if GPU access is infeasible.
+* Visualize the training/validation loss and accuracy improvements natively in Scala, and create a confusion matrix visualizing the inaccuracy distribution, possibly using Vegas or a similar library.
+*  Experiment with alternative sentence embedding models, or add a tokenizer intermediate step.
