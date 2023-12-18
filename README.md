@@ -1,4 +1,4 @@
-# Scala Course final project: Tweet Classification with Spark NLP
+# Tweet Classification with Spark NLP
  
 ### Motivation and Data Source
 I created this project with the goal of submitting a classification of disaster-related vs non-disaster-related tweets to this [Kaggle competition.](https://www.kaggle.com/competitions/nlp-getting-started/data)
