@@ -9,6 +9,7 @@ I followed [these instructions](https://www.tutorialspoint.com/apache_spark/apac
 ```shell
 export PATH=$PATH:/usr/local/spark/bin
 ```
+You may need to adjust build.sbt in accordance with your hardware. For example, if you are using Apple Silicon, change `spark-nlp` to `spark-nlp-silicon`. See [Spark-NLP documentation](https://github.com/JohnSnowLabs/spark-nlp/blob/master/README.md) for more info.
 
 ### Use
 After you executed `sbt compile assembly` to get a JAR (without Apache Spark), you can use `spark-submit` like this:
